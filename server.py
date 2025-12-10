@@ -12,7 +12,6 @@ from reportlab.lib.utils import ImageReader
 from reportlab.lib.colors import HexColor
 import re
 
-
 app = FastAPI()
 
 # -------------------------
@@ -20,11 +19,9 @@ app = FastAPI()
 # -------------------------
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
-
 @app.get("/")
 async def home():
     return FileResponse("public/index.html")
-
 
 # -------------------------
 # GOOGLE VERIFY
@@ -33,7 +30,6 @@ async def home():
 async def google_verify():
     return PlainTextResponse("google-site-verification: googlec02c838b73c409da.html")
 
-
 # -------------------------
 # SITEMAP
 # -------------------------
@@ -41,9 +37,8 @@ async def google_verify():
 async def sitemap():
     return FileResponse("public/sitemap.xml", media_type="application/xml")
 
-
 # -------------------------
-# ROBOTS.TXT
+# ROBOTS
 # -------------------------
 @app.get("/robots.txt")
 async def robots():
@@ -54,15 +49,13 @@ async def robots():
         media_type="text/plain"
     )
 
-
 # -------------------------
-# ENV KEYS
+# API KEY
 # -------------------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-
 # =====================================================
-# CLEAN SANITIZER
+# SANITIZER — remove markdown & emoji
 # =====================================================
 def sanitize_text(raw: str) -> str:
     if not raw:
@@ -70,11 +63,9 @@ def sanitize_text(raw: str) -> str:
 
     text = raw
 
-    # Remove markdown
     for md in ["**", "*", "#", "`", "_"]:
         text = text.replace(md, "")
 
-    # Remove emoji only
     def keep(ch):
         code = ord(ch)
         if 0x1F000 <= code <= 0x1FAFF: return False
@@ -83,24 +74,21 @@ def sanitize_text(raw: str) -> str:
 
     text = "".join(ch for ch in text if keep(ch))
 
-    # Normalize blank lines
     lines = [ln.rstrip() for ln in text.split("\n")]
-    clean = []
-    skip = False
-    for l in lines:
-        if l.strip() == "":
+    clean, skip = [], False
+    for ln in lines:
+        if ln.strip() == "":
             if not skip:
                 clean.append("")
             skip = True
         else:
-            clean.append(l)
+            clean.append(ln)
             skip = False
 
     return "\n".join(clean).strip()
 
-
 # =====================================================
-# AI ANALYSIS — GPT-4o ALWAYS
+# AI ANALYSIS — always GPT-4o
 # =====================================================
 @app.post("/analyze")
 async def analyze_property(request: Request):
@@ -115,10 +103,12 @@ async def analyze_property(request: Request):
     if not price or not rent or not location:
         return JSONResponse({"result": "Please fill Price, Rent and Location."})
 
+    model = "gpt-4o"
+
     prompt = f"""
 You are an expert real estate analyst.
-Generate a clean structured report in this order:
-
+Generate a long structured report with clean English paragraphs.
+Sections (in this exact order):
 Rental Yield:
 Monthly Cashflow:
 Annual Cashflow:
@@ -127,12 +117,11 @@ Cap Rate:
 Risk Score (1–100):
 Market Summary:
 Final Recommendation:
-
-Rules:
-- Use only digits (8.5%, $12,400)
-- No markdown, no lists
-- Clean English paragraphs
-
+RULES:
+- Use digits only ($250,000, 48%)
+- NEVER spell numbers as words (no “twelve thousand”)
+- No markdown, no bullets
+- Clean paragraphs only
 INPUT:
 Price: {price}
 Rent: {rent}
@@ -145,17 +134,16 @@ Location: {location}
     headers = {"Authorization": f"Bearer {OPENAI_API_KEY}", "Content-Type": "application/json"}
 
     try:
-        r = requests.post(url, headers=headers, json={"model": "gpt-4o", "input": prompt}, timeout=60)
+        r = requests.post(url, headers=headers, json={"model": model, "input": prompt}, timeout=60)
         text = r.json()["output"][0]["content"][0]["text"]
     except Exception as e:
-        return JSONResponse({"result": f"AI error: {e}"})
+        text = f"AI error: {e}"
 
     clean = sanitize_text(text)
     return JSONResponse({"result": clean})
 
-
 # =====================================================
-# PDF SECTION SPLITTER
+# SPLIT SECTIONS
 # =====================================================
 def split_sections_for_pdf(text):
     titles = [
@@ -179,15 +167,14 @@ def split_sections_for_pdf(text):
     for i, m in enumerate(matches):
         title = m.group(1)
         start = m.end()
-        end = matches[i+1].start() if i+1 < len(matches) else len(text)
+        end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         body = text[start:end].strip()
         out.append((title, body))
 
     return out
 
-
 # =====================================================
-# MODERN PROFESSIONAL PDF ENGINE
+# NEW PROFESSIONAL PDF ENGINE
 # =====================================================
 @app.post("/generate_pdf")
 async def generate_pdf(request: Request):
@@ -196,99 +183,87 @@ async def generate_pdf(request: Request):
 
     buffer = BytesIO()
     pdf = canvas.Canvas(buffer, pagesize=letter)
-    width, height = letter
 
-    accent = HexColor("#7B3FF2")  # Purple accent
+    width, height = letter
+    accent = HexColor("#7B3FF2")
     black = HexColor("#000000")
 
-    # ---------------------------------------------------
     # COVER PAGE
-    # ---------------------------------------------------
     try:
         logo_path = "public/favicon.png"
         if os.path.exists(logo_path):
             img = ImageReader(logo_path)
-            pdf.drawImage(img, width/2 - 50, height - 200, width=100, height=100, mask="auto")
+            pdf.drawImage(img, width / 2 - 40, height - 170, 80, 80, mask="auto")
     except:
         pass
 
     pdf.setFont("Helvetica-Bold", 28)
-    pdf.drawCentredString(width/2, height - 260, "RealtyAI Investment Report")
+    pdf.drawCentredString(width / 2, height - 260, "RealtyAI Investment Report")
 
     pdf.setFont("Helvetica", 14)
-    pdf.drawCentredString(width/2, height - 290, "AI-powered real estate analysis")
+    pdf.drawCentredString(width / 2, height - 290, "AI-powered real estate analysis")
 
     pdf.showPage()
 
-    # ---------------------------------------------------
-    # MAIN CONTENT
-    # ---------------------------------------------------
+    # PAGE SETTINGS
     left = 50
-    y = 760
-    line_height = 15
-    bottom_margin = 70
+    y = 750
+    lh = 15
+    min_bottom = 70
 
-    def page_footer():
+    def footer():
         pdf.setFont("Helvetica-Oblique", 9)
-        pdf.drawCentredString(width/2, 35, "RealtyAI • tryrealtyai.com")
+        pdf.drawCentredString(width / 2, 30, "RealtyAI • tryrealtyai.com")
 
     def new_page():
         nonlocal y
-        page_footer()
+        footer()
         pdf.showPage()
         pdf.setFont("Helvetica", 11)
-        y = 760
+        y = 750
 
+    # MAIN SECTIONS
     for title, body in sections:
 
         wrapped = []
         for ln in body.split("\n"):
-            wrapped.extend(wrap(ln, 90) or [""])
+            wrapped.extend(wrap(ln, 95) or [""])
 
-        # Height required for this whole section
-        needed = (len(wrapped) + 3) * line_height
+        needed_height = 28 + len(wrapped) * lh + 20
 
-        # If not enough space → new page BEFORE title
-        if y - needed < bottom_margin:
+        if y - needed_height < min_bottom:
             new_page()
 
-        # TITLE
         pdf.setFont("Helvetica-Bold", 14)
         pdf.setFillColor(accent)
         pdf.drawString(left, y, f"■ {title}")
         y -= 22
 
-        # BODY
         pdf.setFont("Helvetica", 11)
         pdf.setFillColor(black)
 
-        for ln in wrapped:
-            if y - line_height < bottom_margin:
+        for line in wrapped:
+            if y - lh < min_bottom:
                 new_page()
-                # redraw title header on the new page? NO — we continue section naturally
-            pdf.drawString(left, y, ln)
-            y -= line_height
+            pdf.drawString(left, y, line)
+            y -= lh
 
-        y -= 12  # extra space after section
+        y -= 15
 
-    # LAST PAGE FOOTER
-    page_footer()
+    footer()
     pdf.showPage()
-
     pdf.save()
-    buffer.seek(0)
 
+    buffer.seek(0)
     return StreamingResponse(
         buffer,
         media_type="application/pdf",
         headers={"Content-Disposition": "attachment; filename=RealtyAI_Report.pdf"}
     )
 
-
-# -------------------------
+# =====================================================
 # START SERVER
-# -------------------------
+# =====================================================
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
