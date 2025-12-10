@@ -18,7 +18,7 @@ app = FastAPI()
 # STATIC FILES
 # -------------------------
 app.mount("/public", StaticFiles(directory="public"), name="public")
-app.mount("/.well-known", StaticFiles(directory="public/.well-known"), name="well-known")
+
 
 
 @app.get("/")
@@ -283,5 +283,6 @@ import os
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
 
 
