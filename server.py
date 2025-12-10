@@ -2,28 +2,25 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 import os
+import uvicorn
 import requests
+import re
 
 app = FastAPI()
 
 # -------------------------
 # STATIC FILES
 # -------------------------
-# /public -> за index.html, favicon, sitemap и т.н.
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
 
-# -------------------------
-# HOME PAGE
-# -------------------------
 @app.get("/")
 async def home():
     return FileResponse("public/index.html")
 
 
 # -------------------------
-# GOOGLE SITE VERIFY
-# (ако не ти трябва – можеш да го махнеш)
+# GOOGLE VERIFY
 # -------------------------
 @app.get("/googlec02c838b73c409da.html")
 async def google_verify():
@@ -43,11 +40,8 @@ async def sitemap():
 # -------------------------
 @app.get("/robots.txt")
 async def robots():
-    # ако смениш домейна – смени и линка долу
     return PlainTextResponse(
-        "User-agent: *\n"
-        "Allow: /\n"
-        "Sitemap: https://tryrealtyai.com/sitemap.xml\n",
+        "User-agent: *\nAllow: /\nSitemap: https://tryrealtyai.com/sitemap.xml\n",
         media_type="text/plain",
     )
 
@@ -59,7 +53,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # =====================================================
-#  SAFE SANITIZER – чисти емоджита/маркап
+# SANITIZER
 # =====================================================
 def sanitize_text(raw: str) -> str:
     if not raw:
@@ -67,11 +61,11 @@ def sanitize_text(raw: str) -> str:
 
     text = raw
 
-    # махаме markdown символите
+    # Remove markdown indicators
     for md in ["**", "*", "#", "`", "_"]:
         text = text.replace(md, "")
 
-    # махаме emoji, оставяме $, %, цифри и т.н.
+    # Remove emojis only
     def keep(ch):
         code = ord(ch)
         if 0x1F000 <= code <= 0x1FAFF:
@@ -82,25 +76,24 @@ def sanitize_text(raw: str) -> str:
 
     text = "".join(ch for ch in text if keep(ch))
 
-    # нормализираме празните редове
+    # Normalize spacing
     lines = [ln.rstrip() for ln in text.split("\n")]
-    clean_lines = []
-    skip_empty = False
+    cleaned = []
+    skip = False
     for l in lines:
         if l.strip() == "":
-            if not skip_empty:
-                clean_lines.append("")
-            skip_empty = True
+            if not skip:
+                cleaned.append("")
+            skip = True
         else:
-            clean_lines.append(l)
-            skip_empty = False
+            cleaned.append(l)
+            skip = False
 
-    final = "\n".join(clean_lines).strip()
-    return final
+    return "\n".join(cleaned).strip()
 
 
 # =====================================================
-#  /analyze – основният AI анализ (всички са "PRO")
+# AI ANALYSIS — ALWAYS GPT-4o
 # =====================================================
 @app.post("/analyze")
 async def analyze_property(request: Request):
@@ -115,19 +108,12 @@ async def analyze_property(request: Request):
     if not price or not rent or not location:
         return JSONResponse({"result": "Please fill Price, Rent and Location."})
 
-    if not OPENAI_API_KEY:
-        return JSONResponse(
-            {"result": "Server error: OPENAI_API_KEY is not configured."}
-        )
-
     model = "gpt-4o"
 
     prompt = f"""
 You are an expert real estate analyst.
-Generate a long structured investment report in clear English.
-
-Use exactly these sections, in this order:
-
+Generate a long, structured report in clean English paragraphs.
+Sections (in this order):
 Rental Yield:
 Monthly Cashflow:
 Annual Cashflow:
@@ -138,38 +124,27 @@ Market Summary:
 Final Recommendation:
 
 RULES:
-- Always use digits for numbers (8.5%, $12400), never words.
-- No markdown, no bullet lists.
-- Each section must be 2–5 sentences, separated by normal line breaks.
-- Do not invent extra sections.
+- Use digits, not words (8.5%, $12,400)
+- No markdown or bullets
+- Clean text only
 
-INPUT DATA:
+INPUT:
 Price: {price}
-Monthly Rent: {rent}
-Monthly Expenses: {expenses}
-Property Taxes: {taxes}
+Rent: {rent}
+Expenses: {expenses}
+Taxes: {taxes}
 Location: {location}
-    """.strip()
+"""
 
     url = "https://api.openai.com/v1/responses"
     headers = {
         "Authorization": f"Bearer {OPENAI_API_KEY}",
-        "Content-Type": "application/json",
+        "Content-Type": "application/json"
     }
 
     try:
-        r = requests.post(
-            url,
-            headers=headers,
-            json={
-                "model": model,
-                "input": prompt,
-            },
-            timeout=60,
-        )
-        data = r.json()
-        # новият Responses API
-        text = data["output"][0]["content"][0]["text"]
+        r = requests.post(url, headers=headers, json={"model": model, "input": prompt}, timeout=60)
+        text = r.json()["output"][0]["content"][0]["text"]
     except Exception as e:
         text = f"AI error: {e}"
 
@@ -178,10 +153,8 @@ Location: {location}
 
 
 # -------------------------
-# START (локално)
+# START SERVER
 # -------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
-    import uvicorn
-
     uvicorn.run(app, host="0.0.0.0", port=port)
