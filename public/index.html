@@ -2,442 +2,170 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-
-    <title>RealtyAI – Free AI Real Estate Investment Analyzer</title>
-
-    <meta name="description"
-          content="RealtyAI is a free AI-powered real estate investment analyzer. Enter property details and instantly get ROI, rental yield, cashflow, cap rate and risk score.">
-    <meta name="keywords"
-          content="real estate investment tool, rental yield calculator, ROI calculator, property analyzer AI, real estate ROI, investment analysis, cashflow calculator, cap rate calculator, AI real estate tool">
-
-    <link rel="canonical" href="https://tryrealtyai.com/">
-
-    <!-- OG -->
-    <meta property="og:title" content="RealtyAI – Free AI Real Estate Investment Analyzer">
-    <meta property="og:description" content="Instant AI-powered ROI, rental yield, cashflow, cap rate & risk score. 100% free to use.">
-    <meta property="og:url" content="https://tryrealtyai.com/">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="https://tryrealtyai.com/public/favicon.png">
-
-    <!-- Twitter -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="RealtyAI – Free AI Real Estate Investment Analyzer">
-    <meta name="twitter:description" content="Instant AI-powered property investment analysis and reports.">
-    <meta name="twitter:image" content="https://tryrealtyai.com/public/favicon.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RealtyAI – Real Estate Investment Analyzer</title>
 
     <link rel="icon" type="image/png" href="/public/favicon.png">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="theme-color" content="#7b4dff">
 
     <style>
         body {
             margin: 0;
-            font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-            background: linear-gradient(135deg, #f8f5ff, #e9f4ff);
-            color: #111827;
+            background: #f6f3ff;
+            font-family: Arial, sans-serif;
+            color: #222;
         }
+
         .container {
             max-width: 900px;
             margin: auto;
-            padding: 40px 20px 80px 20px;
-        }
-        .hero {
-            text-align: center;
-            margin-bottom: 32px;
-        }
-        .hero h1 {
-            font-size: 42px;
-            font-weight: 800;
-            margin-bottom: 8px;
-            background: linear-gradient(90deg, #7b4dff, #ff69b4);
-            -webkit-background-clip: text;
-            color: transparent;
-        }
-        .hero p {
-            font-size: 16px;
-            color: #4b5563;
-            margin: 4px 0;
-        }
-        .badge-free {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 999px;
-            background: rgba(16, 185, 129, 0.12);
-            color: #047857;
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 8px;
+            padding: 20px;
         }
 
-        .box {
+        h1 {
+            text-align: center;
+            margin-top: 40px;
+            font-size: 36px;
+            color: #5a00d6;
+        }
+
+        .card {
             background: white;
-            padding: 24px;
-            border-radius: 18px;
-            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.13);
-            margin-bottom: 32px;
+            padding: 25px;
+            border-radius: 16px;
+            box-shadow: 0 0 25px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
         }
+
         label {
-            font-weight: 600;
-            margin-top: 10px;
+            font-weight: bold;
             display: block;
-            font-size: 14px;
+            margin-bottom: 6px;
+            margin-top: 15px;
         }
+
         input {
             width: 100%;
-            padding: 11px 12px;
-            border: 1px solid #d1d5db;
-            border-radius: 10px;
-            margin-top: 5px;
-            margin-bottom: 12px;
-            font-size: 15px;
-            outline: none;
-            box-sizing: border-box;
-        }
-        input:focus {
-            border-color: #7b4dff;
-            box-shadow: 0 0 0 1px rgba(123, 77, 255, 0.25);
-        }
-        button.primary-btn {
-            width: 100%;
             padding: 14px;
-            background: linear-gradient(90deg, #7b4dff, #ff69b4);
+            border-radius: 10px;
+            border: 1px solid #ccc;
+            font-size: 16px;
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 20px;
+            font-size: 18px;
             border: none;
             border-radius: 12px;
+            background: linear-gradient(90deg, #6a11cb, #b933ff);
             color: white;
-            font-size: 17px;
-            font-weight: 700;
             cursor: pointer;
-            margin-top: 12px;
+            transition: 0.2s;
         }
-        button.primary-btn:hover {
+
+        button:hover {
             opacity: 0.9;
         }
 
-        .output {
-            background: #ffffff;
-            padding: 20px;
-            border: 1px solid #f3f4f6;
-            border-radius: 14px;
-            margin-top: 20px;
-            font-size: 14px;
-        }
-        .section-block {
-            padding: 12px 10px 4px 10px;
-            border-bottom: 1px solid #f3f4f6;
-        }
-        .section-title {
-            display: flex;
-            align-items: center;
-            font-weight: 700;
-            margin-bottom: 4px;
-            color: #4b1fff;
-            font-size: 15px;
-        }
-        .section-title-square {
-            width: 11px;
-            height: 11px;
-            border-radius: 3px;
-            background: #7b4dff;
-            margin-right: 7px;
-        }
-        .section-body {
-            color: #111827;
-            line-height: 1.55;
+        #resultBox {
             white-space: pre-line;
-        }
-        .small-note {
-            font-size: 12px;
-            color: #6b7280;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        /* Placeholder за реклами (ще го ползваш за AdSense по-късно) */
-        .ad-slot {
-            margin: 24px 0;
-            padding: 12px;
-            border-radius: 12px;
-            background: #f9fafb;
-            border: 1px dashed #d1d5db;
-            text-align: center;
-            font-size: 12px;
-            color: #9ca3af;
-        }
-
-        .info-section {
-            margin-top: 40px;
-            padding: 26px;
+            padding: 20px;
             background: #ffffff;
-            border-radius: 18px;
-            box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
-        }
-        .info-section h2 {
-            font-size: 24px;
-            margin-bottom: 12px;
-            color: #4b1fff;
-        }
-        .info-section h3 {
-            font-size: 17px;
-            margin-top: 16px;
-            margin-bottom: 6px;
-        }
-        .info-section p,
-        .info-section li {
-            font-size: 14px;
-            color: #374151;
+            border-radius: 12px;
+            border: 2px solid #d3c7ff;
+            font-size: 16px;
             line-height: 1.5;
-        }
-        .info-section ul {
-            padding-left: 18px;
+            margin-top: 10px;
         }
 
-        .site-footer {
-            background: #111827;
-            color: #d1d5db;
-            padding: 28px 20px;
-            margin-top: 40px;
-        }
-        .footer-inner {
-            max-width: 900px;
-            margin: 0 auto;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 28px;
-            justify-content: space-between;
-        }
-        .footer-col h4 {
-            font-size: 14px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            color: #f9fafb;
-        }
-        .footer-link {
-            display: block;
-            font-size: 13px;
-            color: #d1d5db;
-            text-decoration: none;
-            margin-bottom: 5px;
-        }
-        .footer-link:hover {
-            color: #a5b4fc;
-        }
-        .footer-brand {
-            font-size: 13px;
-            color: #9ca3af;
-        }
-        .footer-brand strong {
-            color: #e5e7eb;
-        }
-        .footer-bottom {
-            border-top: 1px solid #374151;
-            margin-top: 18px;
-            padding-top: 10px;
-            font-size: 11px;
-            color: #6b7280;
+        .footer {
             text-align: center;
+            margin-top: 40px;
+            font-size: 14px;
+            color: #666;
         }
-        @media (max-width: 768px) {
-            .footer-inner {
-                flex-direction: column;
-                align-items: flex-start;
-            }
+
+        .feature-section {
+            padding: 30px 0;
+        }
+
+        .feature-title {
+            text-align: center;
+            font-size: 32px;
+            color: #5a00d6;
+            margin-bottom: 20px;
+        }
+
+        .feature-box {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.06);
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .feature-box h3 {
+            margin: 0;
+            font-size: 22px;
+            color: #5a00d6;
         }
     </style>
 </head>
 <body>
+
 <div class="container">
 
-    <div class="hero">
-        <div class="badge-free">100% FREE • No login • No paywalls</div>
-        <h1>RealtyAI</h1>
-        <p>Instant AI-powered real estate investment analysis.</p>
-        <p>Enter property details and get ROI, rental yield, cashflow & risk score.</p>
-    </div>
+    <h1>RealtyAI – Investment Analyzer</h1>
 
-    <!-- MAIN APP CARD -->
-    <div class="box">
+    <div class="card">
+
         <label>Property Price ($)</label>
-        <input id="price" type="number" placeholder="Example: 120000">
+        <input id="price" type="number" placeholder="e.g. 350000">
 
         <label>Monthly Rent ($)</label>
-        <input id="rent" type="number" placeholder="Example: 1200">
+        <input id="rent" type="number" placeholder="e.g. 2200">
 
         <label>Monthly Expenses ($)</label>
-        <input id="expenses" type="number" placeholder="Example: 400">
+        <input id="expenses" type="number" placeholder="e.g. 400">
 
         <label>Property Taxes ($)</label>
-        <input id="taxes" type="number" placeholder="Example: 150">
+        <input id="taxes" type="number" placeholder="e.g. 250">
 
         <label>Location (City, Country)</label>
-        <input id="location" type="text" placeholder="Example: Miami, USA">
+        <input id="location" type="text" placeholder="e.g. Miami, USA">
 
-        <button class="primary-btn" onclick="analyze()">Analyze Property</button>
+        <button onclick="analyze()">Analyze Property</button>
 
-        <div id="output" class="output" style="display:none;"></div>
+        <div id="resultBox"></div>
+    </div>
 
-        <p class="small-note">
-            RealtyAI is currently completely free to use. We plan to support the project
-            with light, non-intrusive advertising.
-        </p>
+    <div class="feature-section">
+        <h2 class="feature-title">What You Get with RealtyAI</h2>
 
-        <!-- Placeholder за бъдеща реклама -->
-        <div class="ad-slot">
-            Ad space (Google AdSense placeholder)
+        <div class="feature-box">
+            <h3>Advanced AI Analysis (GPT-4o)</h3>
+            <p>Get structured insights on rental yield, cashflow, ROI, cap rate, market risks & recommendations — all in clean English with professional clarity.</p>
+        </div>
+
+        <div class="feature-box">
+            <h3>No Account, No Paywall</h3>
+            <p>RealtyAI is fully free to use. No subscription. No limitations. Just instant insights powered by AI.</p>
+        </div>
+
+        <div class="feature-box">
+            <h3>Perfect for Investors & Agents</h3>
+            <p>Use RealtyAI to evaluate deals fast, compare investment opportunities, and make smarter decisions.</p>
         </div>
     </div>
 
-    <!-- FAQ / INFO (съкратено, но достатъчно) -->
-    <section id="faq" class="info-section">
-        <h2>FAQ</h2>
-
-        <h3>What is RealtyAI?</h3>
-        <p>RealtyAI is a simple AI-powered real estate investment calculator. You enter basic numbers and
-           the app generates a detailed analysis in seconds – rental yield, cashflow, ROI, cap rate and risk score.</p>
-
-        <h3>Is it really free?</h3>
-        <p>Yes. The tool is free to use. In the future we may display a few ads to keep the service running.</p>
-
-        <h3>Do I need an account?</h3>
-        <p>No. There is no login, no sign-up and no payment step. Just open the page, enter numbers and run the analysis.</p>
-
-        <h3>Is this financial advice?</h3>
-        <p>No. The output is for informational and educational purposes only and should not be considered financial,
-           legal or tax advice. Always do your own research or consult a professional before investing.</p>
-    </section>
-
-    <!-- PRIVACY -->
-    <section id="privacy" class="info-section">
-        <h2>Privacy</h2>
-        <p>We do not require login or personal details. Basic usage logs (such as IP address and timestamps)
-           may be stored by our hosting provider for security and abuse prevention.</p>
-        <p>Payments are not processed on this site because the tool is currently free.</p>
-        <p>If you have any questions, you can contact us at: <strong>tryrealtyai@proton.me</strong></p>
-    </section>
-
-    <!-- TERMS -->
-    <section id="terms" class="info-section">
-        <h2>Terms of Use</h2>
-
-        <h3>Use of the service</h3>
-        <p>By using RealtyAI you agree that the analysis is generated by an AI model and may contain errors.
-           You are solely responsible for your investment decisions.</p>
-
-        <h3>No guarantees</h3>
-        <p>The service is provided “as is”, without warranties of accuracy or fitness for a particular purpose.
-           We may change or discontinue the service at any time.</p>
-    </section>
+    <div class="footer">
+        RealtyAI is free to use. We support the project via non-intrusive advertising.
+    </div>
 
 </div>
 
-<footer class="site-footer">
-    <div class="footer-inner">
-        <div class="footer-col">
-            <h4>Navigate</h4>
-            <a class="footer-link" href="#top" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Home</a>
-            <a class="footer-link" href="#faq">FAQ</a>
-            <a class="footer-link" href="#privacy">Privacy</a>
-            <a class="footer-link" href="#terms">Terms</a>
-        </div>
-        <div class="footer-col">
-            <h4>Product</h4>
-            <span class="footer-link">Free Investment Analyzer</span>
-            <span class="footer-link">AI-driven Reports</span>
-        </div>
-        <div class="footer-col">
-            <h4>About</h4>
-            <p class="footer-brand">
-                <strong>RealtyAI</strong> – a tiny web tool for property investors.<br>
-                Built to help you quickly understand the numbers before you invest.
-            </p>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        © <span id="yearSpan"></span> RealtyAI. All rights reserved.
-    </div>
-</footer>
-
 <script>
-/* Рендиране на анализа в секции */
-function renderAnalysis(text) {
-    const output = document.getElementById("output");
-    output.innerHTML = "";
-    output.style.display = "block";
-
-    if (!text || text.trim() === "") {
-        output.textContent = "No analysis generated.";
-        return;
-    }
-
-    const allTitles = [
-        "Rental Yield",
-        "Monthly Cashflow",
-        "Annual Cashflow",
-        "ROI (5-year & 10-year)",
-        "Cap Rate",
-        "Risk Score (1–100)",
-        "Risk Score (1-100)",
-        "Market Summary",
-        "Final Recommendation"
-    ];
-
-    let remaining = text;
-    const sections = [];
-
-    for (let i = 0; i < allTitles.length; i++) {
-        const title = allTitles[i];
-        const marker = title + ":";
-        const idx = remaining.indexOf(marker);
-        if (idx === -1) continue;
-
-        const after = idx + marker.length;
-        let nextIndex = remaining.length;
-
-        for (let j = i + 1; j < allTitles.length; j++) {
-            const t2 = allTitles[j] + ":";
-            const pos2 = remaining.indexOf(t2, after);
-            if (pos2 !== -1 && pos2 < nextIndex) {
-                nextIndex = pos2;
-            }
-        }
-        const body = remaining.slice(after, nextIndex).trim();
-        sections.push({ title, body });
-    }
-
-    if (sections.length === 0) {
-        output.textContent = text;
-        return;
-    }
-
-    sections.forEach(sec => {
-        const block = document.createElement("div");
-        block.className = "section-block";
-
-        const h = document.createElement("div");
-        h.className = "section-title";
-
-        const square = document.createElement("div");
-        square.className = "section-title-square";
-
-        const titleSpan = document.createElement("span");
-        titleSpan.textContent = sec.title;
-
-        h.appendChild(square);
-        h.appendChild(titleSpan);
-
-        const body = document.createElement("div");
-        body.className = "section-body";
-        body.textContent = sec.body;
-
-        block.appendChild(h);
-        block.appendChild(body);
-        output.appendChild(block);
-    });
-}
-
-/* Основен анализ */
 async function analyze() {
     const price = document.getElementById("price").value;
     const rent = document.getElementById("rent").value;
@@ -445,27 +173,17 @@ async function analyze() {
     const taxes = document.getElementById("taxes").value;
     const location = document.getElementById("location").value;
 
-    const output = document.getElementById("output");
-    output.style.display = "block";
-    output.innerHTML = "Analyzing… 🔍";
+    document.getElementById("resultBox").innerHTML = "Analyzing...";
 
-    try {
-        const response = await fetch("/analyze", {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({ price, rent, expenses, taxes, location })
-        });
-        const data = await response.json();
-        const text = data.result || "";
-        renderAnalysis(text);
-    } catch (e) {
-        output.innerHTML = "Error while contacting the analysis server.";
-    }
+    const res = await fetch("/analyze", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({ price, rent, expenses, taxes, location })
+    });
+
+    const data = await res.json();
+    document.getElementById("resultBox").innerHTML = data.result;
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-    document.getElementById("yearSpan").textContent = new Date().getFullYear();
-});
 </script>
 
 </body>
