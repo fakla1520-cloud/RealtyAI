@@ -18,7 +18,6 @@ app = FastAPI()
 # -------------------------
 app.mount("/public", StaticFiles(directory="public"), name="public")
 
-
 @app.get("/")
 async def home():
     return FileResponse("public/index.html")
@@ -60,30 +59,27 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # =====================================================
-# SANITIZER (removes emoji + unwanted formatting)
+#  TEXT SANITIZER
 # =====================================================
 def sanitize_text(raw: str) -> str:
     if not raw:
         return ""
-
     text = raw
 
-    # Remove markdown symbols
+    # remove markdown
     for md in ["**", "*", "#", "`", "_"]:
         text = text.replace(md, "")
 
-    # Remove emoji only
+    # remove emoji only
     def keep(ch):
         code = ord(ch)
-        if 0x1F000 <= code <= 0x1FAFF:
-            return False
-        if 0x2600 <= code <= 0x27BF:
-            return False
+        if 0x1F000 <= code <= 0x1FAFF: return False
+        if 0x2600 <= code <= 0x27BF: return False
         return True
 
     text = "".join(ch for ch in text if keep(ch))
 
-    # Normalize whitespace
+    # normalize spaces
     lines = [ln.rstrip() for ln in text.split("\n")]
     clean = []
     skip = False
@@ -100,7 +96,7 @@ def sanitize_text(raw: str) -> str:
 
 
 # =====================================================
-# AI ANALYSIS — Always GPT-4o
+#  AI ANALYSIS — GPT-4o FIXED API FORMAT
 # =====================================================
 @app.post("/analyze")
 async def analyze_property(request: Request):
@@ -119,8 +115,9 @@ async def analyze_property(request: Request):
 
     prompt = f"""
 You are an expert real estate analyst.
-Generate a long structured report with clean English paragraphs.
-Sections (in this exact order):
+Produce a clean structured report in English.
+
+Sections:
 Rental Yield:
 Monthly Cashflow:
 Annual Cashflow:
@@ -129,11 +126,12 @@ Cap Rate:
 Risk Score (1–100):
 Market Summary:
 Final Recommendation:
-RULES:
-- Use digits only (8.5%, $12,400)
-- NEVER spell numbers as words
-- No markdown
+
+Rules:
+- Digits only (8.5%, $12,300)
+- No markdown, no lists
 - Clean paragraphs only
+
 INPUT:
 Price: {price}
 Rent: {rent}
@@ -147,7 +145,16 @@ Location: {location}
 
     try:
         r = requests.post(url, headers=headers, json={"model": model, "input": prompt}, timeout=60)
-        text = r.json()["output"][0]["content"][0]["text"]
+        data = r.json()
+
+        # Modern OpenAI API format
+        if "output" in data:
+            text = data["output"][0]["content"][0]["text"]
+        elif "response" in data:
+            text = data["response"]
+        else:
+            text = str(data)
+
     except Exception as e:
         text = f"AI error: {e}"
 
@@ -181,9 +188,7 @@ def split_sections_for_pdf(text):
         title = m.group(1)
         start = m.end()
         end = matches[i+1].start() if i+1 < len(matches) else len(text)
-        body = text[start:end].strip()
-        out.append((title, body))
-
+        out.append((title, text[start:end].strip()))
     return out
 
 
@@ -196,44 +201,36 @@ async def generate_pdf(request: Request):
     pdf = canvas.Canvas(buffer, pagesize=letter)
     width, height = letter
 
-    # COVER PAGE
+    # cover page
     try:
         logo_path = "public/favicon.png"
         if os.path.exists(logo_path):
-            img = ImageReader(logo_path)
-            pdf.drawImage(img, width/2 - 40, height - 160, width=80, height=80, mask="auto")
+            pdf.drawImage(ImageReader(logo_path), width/2 - 40, height - 160, 80, 80)
     except:
         pass
 
     pdf.setFont("Helvetica-Bold", 28)
     pdf.drawCentredString(width/2, height - 250, "RealtyAI Investment Report")
-
-    pdf.setFont("Helvetica", 14)
-    pdf.drawCentredString(width/2, height - 280, "AI-powered real estate analysis")
-
     pdf.showPage()
 
-    # MAIN CONTENT
-    left = 50
     y = 760
+    left = 50
     lh = 16
-    bottom = 70
 
     def new_page():
         nonlocal y
-        pdf.setFont("Helvetica-Oblique", 9)
-        pdf.drawCentredString(width/2, 40, "RealtyAI • tryrealtyai.com")
         pdf.showPage()
         pdf.setFont("Helvetica", 11)
         y = 760
+
+    pdf.setFont("Helvetica", 11)
 
     for title, body in sections:
         wrapped = []
         for ln in body.split("\n"):
             wrapped.extend(wrap(ln, 90) or [""])
 
-        needed = (len(wrapped) + 2) * lh
-        if y - needed < bottom:
+        if y - (len(wrapped) * lh + 40) < 50:
             new_page()
 
         pdf.setFont("Helvetica-Bold", 14)
@@ -244,16 +241,7 @@ async def generate_pdf(request: Request):
         for ln in wrapped:
             pdf.drawString(left, y, ln)
             y -= lh
-
         y -= 10
-
-    # LAST PAGE
-    pdf.showPage()
-    pdf.setFont("Helvetica-Bold", 20)
-    pdf.drawCentredString(width/2, 700, "Thank you for using RealtyAI!")
-
-    pdf.setFont("Helvetica", 12)
-    pdf.drawCentredString(width/2, 660, "https://tryrealtyai.com")
 
     pdf.save()
     buffer.seek(0)
@@ -266,7 +254,7 @@ async def generate_pdf(request: Request):
 
 
 # -------------------------
-# START SERVER — CORRECT VERSION
+# START SERVER
 # -------------------------
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
