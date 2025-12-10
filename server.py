@@ -4,7 +4,6 @@ from fastapi.staticfiles import StaticFiles
 import os
 import uvicorn
 import requests
-import time
 from io import BytesIO
 from textwrap import wrap
 from reportlab.lib.pagesizes import letter
@@ -18,7 +17,6 @@ app = FastAPI()
 # STATIC FILES
 # -------------------------
 app.mount("/public", StaticFiles(directory="public"), name="public")
-
 
 
 @app.get("/")
@@ -62,7 +60,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # =====================================================
-#  SAFE SANITIZER (emoji off, текстът чист)
+# SANITIZER (removes emoji + unwanted formatting)
 # =====================================================
 def sanitize_text(raw: str) -> str:
     if not raw:
@@ -70,14 +68,13 @@ def sanitize_text(raw: str) -> str:
 
     text = raw
 
-    # Remove markdown, but keep text symbols intact
+    # Remove markdown symbols
     for md in ["**", "*", "#", "`", "_"]:
         text = text.replace(md, "")
 
-    # Strip emoji only (keep $, %, -, etc.)
+    # Remove emoji only
     def keep(ch):
         code = ord(ch)
-        # emoji ranges
         if 0x1F000 <= code <= 0x1FAFF:
             return False
         if 0x2600 <= code <= 0x27BF:
@@ -99,12 +96,11 @@ def sanitize_text(raw: str) -> str:
             clean.append(l)
             skip = False
 
-    final = "\n".join(clean).strip()
-    return final
+    return "\n".join(clean).strip()
 
 
 # =====================================================
-# AI ANALYSIS — ВИНАГИ GPT-4o, БЕЗ ЛИМИТИ
+# AI ANALYSIS — Always GPT-4o
 # =====================================================
 @app.post("/analyze")
 async def analyze_property(request: Request):
@@ -119,8 +115,8 @@ async def analyze_property(request: Request):
     if not price or not rent or not location:
         return JSONResponse({"result": "Please fill Price, Rent and Location."})
 
-    # Всички са като PRO → винаги използваме силния промпт + GPT-4o
     model = "gpt-4o"
+
     prompt = f"""
 You are an expert real estate analyst.
 Generate a long structured report with clean English paragraphs.
@@ -135,8 +131,8 @@ Market Summary:
 Final Recommendation:
 RULES:
 - Use digits only (8.5%, $12,400)
-- NEVER spell numbers as words (“twelve thousand”)
-- No markdown, no bullets
+- NEVER spell numbers as words
+- No markdown
 - Clean paragraphs only
 INPUT:
 Price: {price}
@@ -160,7 +156,7 @@ Location: {location}
 
 
 # =====================================================
-# PDF ENGINE — същият красив отчет
+# PDF ENGINE
 # =====================================================
 def split_sections_for_pdf(text):
     titles = [
@@ -168,7 +164,6 @@ def split_sections_for_pdf(text):
         "Monthly Cashflow",
         "Annual Cashflow",
         "ROI (5-year & 10-year)",
-        "ROI (5-year)",
         "Cap Rate",
         "Risk Score",
         "Market Summary",
@@ -241,22 +236,18 @@ async def generate_pdf(request: Request):
         if y - needed < bottom:
             new_page()
 
-        # TITLE
         pdf.setFont("Helvetica-Bold", 14)
-        pdf.setFillColorRGB(0.45, 0.15, 0.85)  # Purple SaaS
         pdf.drawString(left, y, f"■ {title}")
         y -= 22
 
         pdf.setFont("Helvetica", 11)
-        pdf.setFillColorRGB(0, 0, 0)
-
         for ln in wrapped:
             pdf.drawString(left, y, ln)
             y -= lh
 
         y -= 10
 
-    # FINAL PAGE
+    # LAST PAGE
     pdf.showPage()
     pdf.setFont("Helvetica-Bold", 20)
     pdf.drawCentredString(width/2, 700, "Thank you for using RealtyAI!")
@@ -275,14 +266,8 @@ async def generate_pdf(request: Request):
 
 
 # -------------------------
-# START SERVER
+# START SERVER — CORRECT VERSION
 # -------------------------
-if __name__ == "__main__":
-import os
-
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     uvicorn.run(app, host="0.0.0.0", port=port)
-
-
-
